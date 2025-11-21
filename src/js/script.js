@@ -153,9 +153,9 @@ const forRange = (a, z) => {
  * @returns {number[]} - シャッフルされた配列
  */
 function fisherYateShuffle(numberArray) {
-    for (i = numberArray.length - 1; i > 0; i--) {
-        r = Math.floor(Math.random() * (i + 1));
-        tmp = numberArray[i];
+    for (let i = numberArray.length - 1; i > 0; i--) {
+        let r = Math.floor(Math.random() * (i + 1));
+        let tmp = numberArray[i];
         numberArray[i] = numberArray[r];
         numberArray[r] = tmp;
     }
