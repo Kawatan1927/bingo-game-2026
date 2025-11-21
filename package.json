@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "animejs": "^3.2.2",
-    "canvas-confetti": "^1.9.3",
+    "canvas-confetti": "^1.9.4",
     "properties-reader": "^2.3.0"
   }
 }
