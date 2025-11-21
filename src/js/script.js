@@ -335,7 +335,6 @@ const saveLogFolder = document.getElementById('log-folder');
  * 設定モーダルを開きます
  */
 modalButton.addEventListener('click', () => {
-    playTransitionSound();
     modal.classList.add('is-open');
 });
 
@@ -344,7 +343,6 @@ modalButton.addEventListener('click', () => {
  * 入力された設定値を検証・保存し、ログファイルからの復元処理も行います
  */
 modalComplete.addEventListener('click', () => {
-    playDecisionSound();
     modal.classList.remove('is-open');
     
     // 入力値の検証と取得
