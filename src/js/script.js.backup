@@ -153,9 +153,9 @@ const forRange = (a, z) => {
  * @returns {number[]} - シャッフルされた配列
  */
 function fisherYateShuffle(numberArray) {
-    for (let i = numberArray.length - 1; i > 0; i--) {
-        let r = Math.floor(Math.random() * (i + 1));
-        let tmp = numberArray[i];
+    for (i = numberArray.length - 1; i > 0; i--) {
+        r = Math.floor(Math.random() * (i + 1));
+        tmp = numberArray[i];
         numberArray[i] = numberArray[r];
         numberArray[r] = tmp;
     }
@@ -322,6 +322,338 @@ function enhanceDrawAnimation(number) {
 }
 
 /**
+ * 斧選択時の視覚演出
+ * 選択された斧に'selected'クラスを追加します
+ * @param {HTMLElement} axe - 選択された斧の要素
+ */
+function enhanceAxeSelection(axe) {
+    axe.classList.add('selected');
+}
+
+/**
+ * 景品選択時の視覚演出
+ * 選択された景品に'selected'クラスを追加します
+ * @param {HTMLElement} prize - 選択された景品の要素
+ */
+function enhancePrizeSelection(prize) {
+    prize.classList.add('selected');
+}
+
+/**
+ * 斧選択のイベントリスナー設定
+ * 金の斧または銀の斧をクリックした際の処理
+ */
+document.querySelectorAll('.axe').forEach(axe => {
+    axe.addEventListener('click', () => {
+        // 全ての斧の選択状態を解除
+        document.querySelectorAll('.axe').forEach(a => a.classList.remove('selected'));
+        selectedAxe = axe.dataset.axe;
+        axeSelectSound.play();
+        enhanceAxeSelection(axe);
+    });
+});
+
+/**
+ * 景品選択確認画面の表示処理
+ * 選択された景品の詳細情報を表示し、確認ボタンを有効化します
+ * @param {Object} prize - 選択された景品オブジェクト
+ * @param {number} prize.id - 景品ID
+ * @param {string} prize.name - 景品名
+ * @param {string} prize.image - 景品画像のパス
+ * @param {string} prize.description - 景品の説明
+ * @param {boolean} isGold - 金の斧（プレミアム景品）の場合はtrue、銀の斧（スタンダード景品）の場合はfalse
+ */
+function displayConfirmWindow(prize, isGold){
+    const confirmScreen = isGold ? 'premiumConfirmScreen' : 'standardConfirmScreen';
+    const itemImg = document.getElementById(isGold ? 'premiumItemImg' : 'standardItemImg');
+    const itemTxt = document.getElementById(isGold ? 'premiumItemTxt' : 'standardItemTxt');
+    const confirmButton = document.getElementById(isGold ? 'confirmPremiumItem' : 'confirmStandardItem');
+
+    playTransitionSound();
+    playDisplayPrizeSound();
+
+    // 景品画像を設定
+    itemImg.innerHTML = `
+        <img src="${prize.image}" alt="当選景品">
+    `;
+
+    // 景品情報を設定
+    itemTxt.innerHTML = `
+        <div class="prize-info">
+            <h4 id="line1">景品番号 ${prize.id}</h4>
+            <h4 id="line2">${prize.name}</h4>
+            <h6 id="line3">${prize.description}</h6>
+        </div>
+    `;
+
+    showScreen(confirmScreen);
+    confirmButton.addEventListener('click', () => selectPrize(prize, isGold));
+    selectedPrizeIdStack.push(prize.id);  // 選択履歴をスタックに追加
+
+    // 画像の拡大アニメーション
+    anime({
+        targets: itemImg,
+        scale: [0.5, 1],
+        duration: 3500
+    });
+
+    // 景品情報のスライドインアニメーション
+    var tl = anime.timeline({
+        easing: 'easeOutExpo',
+        duration: 1000
+      });
+
+      tl
+      .add({
+        targets: '#line1',
+        translateX: [-1700, -20],  // 左から右へスライド
+      })
+      .add({
+        targets: '#line2',
+        translateX: [-1700, -20],
+      }, '-=500')  // 前のアニメーションの500ms前から開始
+      .add({
+        targets: '#line3',
+        translateX: [-1700, -20],
+      }, '-=500')
+
+
+}
+
+/**
+ * 景品選択処理
+ * 選択された景品の当選画面を表示し、3Dカードエフェクトと回転アニメーションを適用します
+ * @param {Object} prize - 選択された景品オブジェクト
+ * @param {number} prize.id - 景品ID
+ * @param {string} prize.name - 景品名
+ * @param {string} prize.image - 景品画像のパス
+ * @param {boolean} isGold - 金の斧（プレミアム景品）の場合はtrue、銀の斧（スタンダード景品）の場合はfalse
+ */
+function selectPrize(prize, isGold) {
+    playDecisionSound();
+    playGetPrizeSound();
+
+    const winScreen = isGold ? 'premiumWinScreen' : 'standardWinScreen';
+    const winDisplay = document.getElementById(isGold ? 'goldWinDisplay' : 'silverWinDisplay');
+    var displayNum = ('00' + prize.id ).slice( -2 );  // IDを2桁表示に整形（例：1 → 01）
+
+    // 当選カードのHTML生成
+    winDisplay.innerHTML = `
+        <div id="${prize.id}" class="card">
+            <div class="content">
+                <h3 style="font-family: cursive;">CONGRATULATIONS!</h3>
+                <h2>${displayNum}</h2>
+                <br>
+                <p>
+                    <img src="${prize.image}" alt="当選景品">
+                </p>
+                <h3>${prize.name}</h3>
+            </div>
+        </div>
+    `;
+
+    // VanillaTiltで3Dチルトエフェクトを適用
+    VanillaTilt.init(document.getElementById(prize.id), {
+        max: 25,           // 最大傾斜角度
+        speed: 400,        // アニメーション速度
+        glare: true,       // グレア（光沢）エフェクトを有効化
+    });
+
+    showScreen(winScreen);
+    enhancePrizeSelection(winDisplay);
+
+    // カードの回転＋落下アニメーション
+    anime({
+        targets: winDisplay,
+        translateY: [-500, 0],    // 上から落下
+        rotateY: [180, 360],      // Y軸で1回転
+        duration: 5000,
+        complete: function(anime){ // アニメーション完了時のコールバック
+            anime.set(winDisplay, {
+                rotateY: 0  // 回転をリセット
+            });
+        }
+    });
+
+    // プレミアム景品の場合、ラストワン賞の条件をチェック
+    if (isGold) {
+        checkLastOnePrize();
+    }
+}
+
+/**
+ * ラストワン賞画面のチェック処理
+ * 全30景品のうち29個が選択済みで残り1個の場合、ラストワン賞画面への遷移ボタンを表示します
+ */
+function checkLastOnePrize() {
+    // 金の斧と銀の斧それぞれで未選択が1個ずつかチェック
+    const allSelected = (prizes.gold.filter(prize => prize.selected === false).length == 1) && (prizes.silver.filter(prize => prize.selected === false).length == 1);
+    const toLastOnePrizeButton = document.getElementById('toLastOnePrizeButton');
+    const backToBingoButton = document.getElementById('backToBingoFromGoldWin');
+    
+    if (allSelected) {
+        // ラストワン賞の条件を満たした場合
+        toLastOnePrizeButton.style.display = 'block';
+        backToBingoButton.style.display = 'none';
+    } else {
+        // まだ選択可能な景品がある場合
+        toLastOnePrizeButton.style.display = 'none';
+        backToBingoButton.style.display = 'block';
+    }
+}
+
+/**
+ * ラストワン賞アニメーション
+ * 複数のメッセージを順番に表示し、最後に花火演出と共にラストワン賞画面を表示します
+ */
+document.getElementById('toLastOnePrizeButton').addEventListener('click', () => {
+    playLastOneButtonSound();
+    showScreen('preLastOneScreen');
+    anime({
+        targets: '#preLastOneScreen',
+        opacity: [0, 1],
+        duration: 7000,
+	    fill: 'forwards'
+    })
+
+    // 各メッセージを指定タイミングで表示（英語メッセージによる演出）
+    lastOneAnimetion(
+        'Thank you for waiting and participating in the new year party 2025.',
+        'pre-last-one-message1',
+        '.pre-last-one-message1 > span',
+        3000
+    );
+
+    lastOneAnimetion(
+        'This is LAST (31st) BINGO!!',
+        'pre-last-one-message2',
+        '.pre-last-one-message2 > span',
+        3500
+    );
+
+    lastOneAnimetion(
+        'So, I would lile to present LAST ONE PRIZE!!',
+        'pre-last-one-message3',
+        '.pre-last-one-message3 > span',
+        4000
+    );
+
+    lastOneAnimetion(
+        '                                                        ',
+        'pre-last-one-message4',
+        '.pre-last-one-message4 > span',
+        8500
+    );
+
+    lastOneAnimetion(
+        'Now Loading..........',
+        'pre-last-one-message5',
+        '.pre-last-one-message5 > span',
+        9500
+    );
+
+    lastOneAnimetion(
+        '[Prize Name]: ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮  All loaded.',
+        'pre-last-one-message6',
+        '.pre-last-one-message6 > span',
+        12000
+    );
+
+    lastOneAnimetion(
+        '[Prize Image]: ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮  All loaded.',
+        'pre-last-one-message7',
+        '.pre-last-one-message7 > span',
+        12500
+    );
+
+    lastOneAnimetion(
+        '[Prize Size]: ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮  All loaded.',
+        'pre-last-one-message8',
+        '.pre-last-one-message8 > span',
+        13000
+    );
+
+    lastOneAnimetion(
+        '[Prize Mfr.]: ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮  All loaded.',
+        'pre-last-one-message9',
+        '.pre-last-one-message9 > span',
+        13500
+    );
+
+    lastOneAnimetion(
+        '                                                               ',
+        'pre-last-one-message10',
+        '.pre-last-one-message10 > span',
+        14000
+    );
+
+    lastOneAnimetion(
+        'Loading Completed!!!',
+        'pre-last-one-message11',
+        '.pre-last-one-message11 > span',
+        19500
+    );
+
+    // 最終的にラストワン賞画面を表示（花火演出付き）
+    setTimeout(() => {
+        showScreen('lastOnePrizeScreen');
+        createFireworks();
+    }, 23500);
+});
+
+/**
+ * ラストワン賞アニメーション用のテキスト表示関数
+ * 指定されたテキストを1文字ずつアニメーション表示します
+ * @param {string} text - 表示するテキスト
+ * @param {string} elemId - 表示位置となる要素のID
+ * @param {string} target - anime.jsでアニメーションするターゲットのセレクタ
+ * @param {number} timeout - アニメーション開始までの遅延時間（ミリ秒）
+ */
+function lastOneAnimetion(text, elemId, target, timeout) {
+    const msg = document.getElementById(elemId);
+
+    setTimeout(() => {
+        // テキストを1文字ずつspan要素に分割（スペースはpreタグで保持）
+        for(i = 0; i < text.length; i++){
+            if(text[i] == ' '){
+                msg.innerHTML += `<span><pre> </pre></span>`
+            }else{
+                msg.innerHTML += `<span>${text[i]}</span>`
+            }
+        }
+
+        // 各文字を順番に拡大表示
+        anime({
+            targets: target,
+            scale: [0, 1],
+            duration: 80,
+            easing: 'easeInElastic(10,1)',
+            delay: anime.stagger(100)  // 各文字を100msずつ遅延させて表示
+        });
+    }, timeout);
+}
+
+/**
+ * 花火演出を作成する関数
+ * ランダムな位置と色で50個の花火エフェクトを生成します
+ */
+function createFireworks() {
+    for (let i = 0; i < 50; i++) {
+        const firework = document.createElement('div');
+        firework.className = 'firework';
+        // ランダムな移動距離を設定（-100px ~ 100px）
+        firework.style.setProperty('--tx', `${Math.random() * 200 - 100}px`);
+        firework.style.setProperty('--ty', `${Math.random() * 200 - 100}px`);
+        // ランダムな初期位置を設定
+        firework.style.left = `${Math.random() * 100}%`;
+        firework.style.top = `${Math.random() * 100}%`;
+        // ランダムな色を設定（HSL形式で360度の色相環から選択）
+        firework.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        document.getElementById('lastOnePrizeScreen').appendChild(firework);
+    }
+}
+
+/**
  * 設定モーダル操作用の要素取得
  */
 const modal = document.querySelector('.js-modal');
@@ -335,6 +667,7 @@ const saveLogFolder = document.getElementById('log-folder');
  * 設定モーダルを開きます
  */
 modalButton.addEventListener('click', () => {
+    playTransitionSound();
     modal.classList.add('is-open');
 });
 
@@ -343,6 +676,7 @@ modalButton.addEventListener('click', () => {
  * 入力された設定値を検証・保存し、ログファイルからの復元処理も行います
  */
 modalComplete.addEventListener('click', () => {
+    playDecisionSound();
     modal.classList.remove('is-open');
     
     // 入力値の検証と取得
@@ -388,6 +722,20 @@ modalComplete.addEventListener('click', () => {
                 }
     
                 console.log(bingoNumbers, drawingCount);
+    
+                // 選択済み景品を復元
+                selectedId = [];
+                for(var k = 0; k < 30; k++){
+                    if((k < 15) && (arg.returnSelcPrizes[k] == 255)){   
+                        var selectedStandardPrize = prizes.silver.find(prize => prize.id === (k + 1));
+                        selectedStandardPrize.selected = true;
+                        selectedId.push(k + 1);
+                    }else if((k >= 15) && (arg.returnSelcPrizes[k] == 255)){
+                        var selectedPremiumPrize = prizes.gold.find(prize => prize.id === (k + 1));
+                        selectedPremiumPrize.selected = true;
+                        selectedId.push(k + 1);
+                    }
+                }
             });
         }, 500)
     }

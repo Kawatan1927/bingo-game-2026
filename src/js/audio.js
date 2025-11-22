@@ -15,22 +15,9 @@ let audioContext = null;
  * @type {Object<string, string>}
  */
 const audioFiles = {
-    decisionButton: "../../sounds/Button_SE8.mp3",
-    cancelButton: "../../sounds/Button_SE7.mp3",
-    transitionButton: "../../sounds/Button_SE9.mp3",
-    resultButton: "../../sounds/Button_SE_10.mp3",
-    lastOneButton: "../../sounds/Button_SE_11.mp3",
     drawButton: "../../sounds/Button_SE4.mp3",
     drawStart: "../../sounds/Digital_Count_SE1.mp3",
     drawStop: "../../sounds/Digital_Count_Stop_SE1.mp3",
-    drumroll: "../../sounds/Drumroll_Only_SE.mp3",
-    cymbalCrash: "../../sounds/Cymbal_Crash_SE2.mp3",
-    cheer: "../../sounds/Cheer_SE.mp3",
-    getPrize: "../../sounds/Get_Prize_SE.mp3",
-    axeMove: "../../sounds/Axe_Move_SE.mp3",
-    axeStop: "../../sounds/Axe_Move_Stop_SE.mp3",
-    displayPrize: "../../sounds/Display_Prize_SE.mp3",
-    displayMessage: "../../sounds/Display_Message_SE.mp3"
 };
  
 /**
@@ -90,66 +77,6 @@ function playSound(name) {
 };
 
 /**
- * 結果発表ボタン押下時音声再生関数
- */
-function playResultButtonSound() {
-    playSound("resultButton");
-}
-
-/**
- * 文字列表示音声再生関数
- * @param {number} playTime - 再生秒数
- */
-function playDisplayMessageSound(playTime) {
-    if(audioContext.state === "suspended"){
-        audioContext.resume();
-    }
-
-    let sourceDisplayMessage = audioContext.createBufferSource();
-    sourceDisplayMessage.buffer = audioBuffers["displayMessage"];
-    sourceDisplayMessage.connect(audioContext.destination);
-    sourceDisplayMessage.loop = true;
-
-    sourceDisplayMessage.start(audioContext.currentTime);
-    sourceDisplayMessage.stop(audioContext.currentTime + playTime);
-}
-
-/**
- * 景品表示時音声再生関数
- */
-function playDisplayPrizeSound() {
-    playSound("displayPrize");
-}
-
-/**
- * 景品選択確定ボタン押下時音声再生関数
- */
-function playDecisionSound() {
-    playSound("decisionButton");
-}
-
-/**
- * 画面遷移ボタン押下時音声再生関数
- */
-function playTransitionSound() {
-    playSound("transitionButton");
-}
-
-/**
- * 戻る/キャンセルボタン押下時音声再生関数
- */
-function playCancelSound() {
-    playSound("cancelButton");
-}
-
-/**
- * ラストワン賞ボタン押下時音声再生関数
- */
-function playLastOneButtonSound() {
-    playSound("lastOneButton");
-}
- 
-/**
  * 抽選ボタン押下時の音声再生関数
  * ボタン押下音、数字めくり音（ループ）、停止音を順番に再生します
  * @param {number} playTime - 数字めくりアニメーションの再生時間（秒）
@@ -183,89 +110,6 @@ function playDrawSound(playTime) {
     sourceStop.start(audioContext.currentTime + playTime); // めくり音停止と同時に停止音を再生
 } 
 
-/**
- * 結果発表時の音声再生関数
- * ドラムロール音と、その後にシンバル音を再生します
- * （注：ドラムロールのループ再生には非対応。drumrollTimeは7秒以下を推奨）
- * @param {number} drumrollTime - ドラムロール音の再生時間（秒）。推奨値は7秒以下
- */
-function playResultSound(drumrollTime) {
-    if(audioContext.state === "suspended"){
-        audioContext.resume();
-    }
-
-    // ゲインノードを生成して音量を増幅（元音源の音量が小さいため）
-    const gainNode = audioContext.createGain()
-    gainNode.gain.value = 3.4;  // 音量を3.4倍に増幅
-
-    // ドラムロール音
-    let sourceDrumroll = audioContext.createBufferSource();
-    sourceDrumroll.buffer = audioBuffers["drumroll"];
-    sourceDrumroll.connect(gainNode).connect(audioContext.destination);
-
-    // シンバルクラッシュ音
-    let sourceSymbal = audioContext.createBufferSource();
-    sourceSymbal.buffer = audioBuffers["cymbalCrash"];
-    sourceSymbal.connect(gainNode).connect(audioContext.destination);
-
-    // ドラムロールを開始し、指定時間後にシンバル音を再生
-    sourceDrumroll.start();
-    sourceDrumroll.stop(audioContext.currentTime + drumrollTime);
-    sourceSymbal.start(audioContext.currentTime + drumrollTime);
-}
-
-/**
- * 景品獲得時の音声再生関数
- * 獲得音の後、2.5秒後に歓声音を再生します
- */
-function playGetPrizeSound() {
-    if(audioContext.state === "suspended"){
-        audioContext.resume();
-    }
-
-    // ゲインノードを生成して歓声音の音量を増幅
-    const gainNode = audioContext.createGain()
-    gainNode.gain.value = 3.4;  // 音量を3.4倍に増幅
-
-    // 景品獲得音
-    let sourceGetPrize = audioContext.createBufferSource();
-    sourceGetPrize.buffer = audioBuffers["getPrize"];
-    sourceGetPrize.connect(audioContext.destination);
-
-    // 歓声音
-    let sourceCheer = audioContext.createBufferSource();
-    sourceCheer.buffer = audioBuffers["cheer"];
-    sourceCheer.connect(gainNode).connect(audioContext.destination);
-
-    // 獲得音を即座に再生し、2.5秒後に歓声音を再生
-    sourceGetPrize.start();
-    sourceCheer.start(audioContext.currentTime + 2.5);
-}
-
-/**
- * 斧表示時の音声再生関数
- * 斧が動く音と、1秒後に停止音を再生します
- */
-function playDisplayAxeSound() {
-    if(audioContext.state === "suspended"){
-        audioContext.resume();
-    }
-
-    // 斧移動音
-    let sourceAxeMove = audioContext.createBufferSource();
-    sourceAxeMove.buffer = audioBuffers["axeMove"];
-    sourceAxeMove.connect(audioContext.destination);
- 
-    // 斧停止音
-    let sourceAxeStop = audioContext.createBufferSource();
-    sourceAxeStop.buffer = audioBuffers["axeStop"];
-    sourceAxeStop.connect(audioContext.destination);
-
-    // 移動音を即座に再生し、1秒後に停止音を再生
-    sourceAxeMove.start();
-    sourceAxeStop.start(audioContext.currentTime + 1);
-}
- 
 /**
  * ページ読み込み時の初期化処理
  * AudioContextを生成し、全ての音声ファイルを非同期で読み込みます
